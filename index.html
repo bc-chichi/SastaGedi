@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Asphalt Outlaws - Prototype v0.2</title>
+    <title>Asphalt Outlaws - Prototype v0.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700&family=Teko:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tone.js for Web Audio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
         body {
             background-color: #1a1a1a;
@@ -45,7 +47,7 @@
             width: 50%;
             height: 60%;
             z-index: 5;
-            -webkit-tap-highlight-color: rgba(0,0,0,0.2); /* Visual feedback on tap */
+            -webkit-tap-highlight-color: rgba(0,0,0,0.2);
         }
         .left { left: 0; }
         .right { right: 0; }
@@ -58,6 +60,45 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+        .icon-button {
+            position: absolute;
+            z-index: 11;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .icon-button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .icon-button svg {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+        }
+        .menu-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-2xl;
+            color: #9ca3af; /* gray-400 */
+            transition: all 0.2s;
+        }
+        .menu-button:hover {
+            color: #fff;
+            background-color: rgba(107, 114, 128, 0.5); /* gray-500 with opacity */
+        }
+        .menu-button svg {
+            width: 1.5rem; /* w-6 */
+            height: 1.5rem; /* h-6 */
+            margin-right: 0.75rem; /* mr-3 */
+            fill: currentColor;
+        }
     </style>
 </head>
 <body class="flex justify-center items-center h-screen">
@@ -66,13 +107,13 @@
         <canvas id="gameCanvas"></canvas>
 
         <!-- HUD -->
-        <div class="absolute top-0 left-0 w-full p-4 text-white hud">
-            <div class="flex justify-between items-center">
+        <div id="hud-container" class="absolute top-0 left-0 w-full p-4 text-white hud">
+            <div class="flex justify-between items-start">
                 <div>
                     <h2 class="text-3xl tracking-widest">SCORE</h2>
                     <p id="score" class="text-5xl font-bold">0</p>
                 </div>
-                <div>
+                <div class="flex flex-col items-end">
                     <h2 class="text-3xl tracking-widest text-right">NITRO</h2>
                     <div id="nitro-bar-container" class="w-32 h-8 bg-gray-800 border-2 border-cyan-400 rounded-sm overflow-hidden mt-1">
                         <div id="nitro-bar" class="h-full bg-cyan-400 transition-all duration-200" style="width: 0%;"></div>
@@ -80,30 +121,55 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Pause Button -->
+        <button id="pause-button" class="icon-button top-4 right-4 hidden">
+            <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
 
         <!-- Touch Controls -->
         <div id="attack-zone-left" class="attack-zone left"></div>
         <div id="attack-zone-right" class="attack-zone right"></div>
 
-        <!-- Start/Game Over Overlay -->
+        <!-- Overlays -->
         <div id="start-screen" class="overlay">
-            <div class="p-8">
+            <div class="p-8 flex flex-col items-center">
                 <h1 class="text-8xl font-bold text-red-500 tracking-wider">ASPHALT OUTLAWS</h1>
-                <p class="text-4xl mt-2 text-gray-300">PROTOTYPE v0.2</p>
+                <p class="text-4xl mt-2 text-gray-300">PROTOTYPE v0.7</p>
                 <button id="start-button" class="mt-12 px-10 py-4 text-4xl bg-red-600 hover:bg-red-700 rounded-lg font-bold tracking-widest shimmer">
                     START RACE
+                </button>
+                <button id="mute-button-start" class="mt-8 menu-button py-2 px-6 rounded-lg">
+                    <svg class="icon-unmuted" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    <svg class="icon-muted hidden" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                    <span class="mute-text">Music: ON</span>
                 </button>
                 <p class="mt-8 text-2xl text-gray-400">Move: Mouse/Finger<br>Attack: Tap/Click Left or Right Side</p>
             </div>
         </div>
         
         <div id="game-over-screen" class="overlay hidden">
-            <div class="p-8">
+            <div class="p-8 flex flex-col items-center">
                 <h1 class="text-8xl font-bold text-red-500 tracking-wider">WRECKED</h1>
                 <p class="text-4xl mt-4 text-gray-300">FINAL SCORE</p>
                 <p id="final-score" class="text-9xl font-bold mt-2">0</p>
                 <button id="restart-button" class="mt-12 px-10 py-4 text-4xl bg-red-600 hover:bg-red-700 rounded-lg font-bold tracking-widest shimmer">
                     RACE AGAIN
+                </button>
+                <!-- Mute Button Added to Game Over Screen -->
+                 <button id="mute-button-over" class="mt-8 menu-button py-2 px-6 rounded-lg">
+                    <svg class="icon-unmuted" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    <svg class="icon-muted hidden" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                    <span class="mute-text">Music: ON</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="pause-screen" class="overlay hidden">
+            <div class="p-8">
+                <h1 class="text-8xl font-bold text-gray-300 tracking-wider">PAUSED</h1>
+                <button id="resume-button" class="mt-12 px-10 py-4 text-4xl bg-cyan-600 hover:bg-cyan-700 rounded-lg font-bold tracking-widest shimmer">
+                    RESUME
                 </button>
             </div>
         </div>
@@ -119,13 +185,79 @@
         
         const startScreen = document.getElementById('start-screen');
         const gameOverScreen = document.getElementById('game-over-screen');
+        const pauseScreen = document.getElementById('pause-screen');
+        
         const startButton = document.getElementById('start-button');
         const restartButton = document.getElementById('restart-button');
+        const resumeButton = document.getElementById('resume-button');
+        const pauseButton = document.getElementById('pause-button');
+        
+        const muteButtonStart = document.getElementById('mute-button-start');
+        const muteButtonOver = document.getElementById('mute-button-over');
+        const allMuteButtons = [muteButtonStart, muteButtonOver];
         
         const attackZoneLeft = document.getElementById('attack-zone-left');
         const attackZoneRight = document.getElementById('attack-zone-right');
 
         let game;
+
+        // --- AUDIO MANAGER ---
+        class AudioManager {
+            constructor() {
+                this.musicPlaying = false;
+                this.isMuted = false;
+
+                const reverb = new Tone.Reverb(0.7).toDestination();
+                this.synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.1, decay: 0.5, sustain: 0.3, release: 1.2 }
+                }).connect(reverb);
+
+                this.musicLoop = new Tone.Sequence((time, note) => {
+                    this.synth.triggerAttackRelease(note, '1n', time);
+                }, ['C3', ['E3', 'G3'], 'A2', ['C3', 'E3']], '1m');
+            }
+
+            startMusic() {
+                if (this.isMuted) return;
+                if (Tone.context.state !== 'running') {
+                    Tone.context.resume();
+                }
+                if (!this.musicPlaying) {
+                    Tone.Transport.start();
+                    this.musicLoop.start(0);
+                    this.musicPlaying = true;
+                }
+            }
+
+            stopMusic() {
+                Tone.Transport.stop();
+                this.musicLoop.stop();
+                this.musicPlaying = false;
+            }
+            
+            pauseMusic() {
+                if (this.musicPlaying) Tone.Transport.pause();
+            }
+
+            resumeMusic() {
+                if (this.musicPlaying) Tone.Transport.start();
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                if (this.isMuted) {
+                    this.stopMusic();
+                }
+                // Sync all mute buttons
+                allMuteButtons.forEach(btn => {
+                    btn.querySelector('.icon-muted').classList.toggle('hidden', !this.isMuted);
+                    btn.querySelector('.icon-unmuted').classList.toggle('hidden', this.isMuted);
+                    btn.querySelector('.mute-text').textContent = this.isMuted ? 'Music: OFF' : 'Music: ON';
+                });
+            }
+        }
+        const audioManager = new AudioManager();
 
         class Game {
             constructor(width, height) {
@@ -138,6 +270,7 @@
                 this.maxSpeed = 15;
                 this.score = 0;
                 this.gameOver = false;
+                this.paused = false;
                 this.gameObjects = [];
                 this.gameStarted = false;
 
@@ -159,7 +292,7 @@
                 canvas.height = this.height;
                 this.score = 0;
                 this.gameOver = false;
-                this.speed = 5;
+                this.paused = false;
                 this.gameObjects = [];
                 this.roadMarkings = [];
                 this.opponents = [];
@@ -167,22 +300,20 @@
                 this.player = new Player(this);
                 this.gameObjects = [this.player];
                 this.gameStarted = true;
+                pauseButton.classList.remove('hidden');
+                audioManager.startMusic();
                 animate(0);
             }
 
             update(deltaTime) {
-                if (this.gameOver || !this.gameStarted) return;
+                if (this.gameOver || !this.gameStarted || this.paused) return;
                 
-                if (this.speed < this.maxSpeed) {
-                    this.speed += 0.005;
-                }
+                if (this.speed < this.maxSpeed) this.speed += 0.005;
                 this.score += Math.floor(this.speed);
 
                 this.roadMarkings.forEach(m => m.update());
                 this.roadMarkings = this.roadMarkings.filter(m => !m.markedForDeletion);
-                if (this.roadMarkings.length < 20) {
-                    this.roadMarkings.push(new RoadMarking(this));
-                }
+                if (this.roadMarkings.length < 20) this.roadMarkings.push(new RoadMarking(this));
                 
                 this.opponentTimer += deltaTime;
                 if (this.opponentTimer > this.opponentInterval) {
@@ -224,8 +355,21 @@
             
             endGame() {
                 this.gameOver = true;
+                pauseButton.classList.add('hidden');
                 finalScoreEl.textContent = this.score;
                 gameOverScreen.classList.remove('hidden');
+                audioManager.stopMusic();
+            }
+
+            togglePause() {
+                this.paused = !this.paused;
+                pauseScreen.classList.toggle('hidden', !this.paused);
+                if (this.paused) {
+                    audioManager.pauseMusic();
+                } else {
+                    audioManager.resumeMusic();
+                    animate(lastTime); // Resume animation loop
+                }
             }
         }
 
@@ -235,10 +379,12 @@
                 this.mouseX = this.game.width / 2;
 
                 window.addEventListener('mousemove', e => {
+                    if (this.game.paused) return;
                     const rect = canvas.getBoundingClientRect();
                     this.mouseX = e.clientX - rect.left;
                 });
                 window.addEventListener('touchmove', e => {
+                    if (this.game.paused) return;
                     const rect = canvas.getBoundingClientRect();
                     if (e.touches.length > 0) {
                         this.mouseX = e.touches[0].clientX - rect.left;
@@ -246,7 +392,7 @@
                 }, { passive: false });
 
                 const pcAttackHandler = (e) => {
-                    if (this.game.gameStarted && !this.game.gameOver) {
+                    if (this.game.gameStarted && !this.game.gameOver && !this.game.paused) {
                        const rect = canvas.getBoundingClientRect();
                        const clickX = e.clientX - rect.left;
                        const side = clickX < this.game.width / 2 ? 'left' : 'right';
@@ -256,20 +402,14 @@
                 };
                 
                 const mobileAttackHandler = (side) => {
-                    if (this.game.gameStarted && !this.game.gameOver) {
+                    if (this.game.gameStarted && !this.game.gameOver && !this.game.paused) {
                        this.game.player.attack(side);
                     }
                 };
                 
                 canvas.addEventListener('mousedown', pcAttackHandler);
-                attackZoneLeft.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    mobileAttackHandler('left');
-                });
-                attackZoneRight.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    mobileAttackHandler('right');
-                });
+                attackZoneLeft.addEventListener('touchstart', (e) => { e.preventDefault(); mobileAttackHandler('left'); });
+                attackZoneRight.addEventListener('touchstart', (e) => { e.preventDefault(); mobileAttackHandler('right'); });
             }
         }
 
@@ -284,8 +424,8 @@
                 
                 this.isAttacking = false;
                 this.attackFrame = 0;
-                this.attackDuration = 15; // frames
-                this.attackSide = 'right'; // 'left' or 'right'
+                this.attackDuration = 15;
+                this.attackSide = 'right';
                 this.pipeLength = 50;
                 this.pipeWidth = 8;
 
@@ -298,15 +438,12 @@
             update(deltaTime) {
                 if(this.isWrecked) {
                     this.wreckTimer++;
-                    if(this.wreckTimer > 120) { // 2 seconds
-                        this.game.endGame();
-                    }
+                    if(this.wreckTimer > 120) this.game.endGame();
                     return;
                 }
 
                 const dx = this.game.input.mouseX - (this.x + this.width / 2);
                 this.x += dx * 0.1;
-
                 this.x = Math.max(this.game.roadMinX, Math.min(this.x, this.game.roadMaxX - this.width));
 
                 if (this.isAttacking) {
@@ -320,9 +457,7 @@
                 }
                 
                 this.game.opponents.forEach(opponent => {
-                    if (this.isColliding(opponent)) {
-                       this.wreck();
-                    }
+                    if (this.isColliding(opponent)) this.wreck();
                 });
             }
 
@@ -370,7 +505,7 @@
                 this.game.opponents.forEach(opponent => {
                     if (!opponent.isWrecked) {
                         const angleMultiplier = this.attackSide === 'left' ? -1 : 1;
-                        const angle = 1.2 * angleMultiplier; // Approximate angle at mid-swing
+                        const angle = 1.2 * angleMultiplier;
                         
                         const pipeOriginX = this.x + this.width / 2;
                         const pipeOriginY = this.y + 20;
@@ -378,7 +513,6 @@
                         const pipeTipX = pipeOriginX + Math.cos(angle) * this.pipeLength;
                         const pipeTipY = pipeOriginY + Math.sin(angle) * this.pipeLength;
                         
-                        // A simple bounding box check for the opponent
                         if (pipeTipX > opponent.x && pipeTipX < opponent.x + opponent.width &&
                             pipeTipY > opponent.y && pipeTipY < opponent.y + opponent.height) {
                                 opponent.wreck();
@@ -390,24 +524,14 @@
             }
             
             isColliding(other) {
-                return (
-                    this.x < other.x + other.width &&
-                    this.x + this.width > other.x &&
-                    this.y < other.y + other.height &&
-                    this.y + this.height > other.y
-                );
+                return (this.x < other.x + other.width && this.x + this.width > other.x && this.y < other.y + other.height && this.y + this.height > other.y);
             }
             
             wreck() {
                 if(this.isWrecked) return;
                 this.isWrecked = true;
-                // Performance: Reduced particle count
-                for(let i = 0; i < 25; i++) {
-                    this.game.particles.push(new Particle(this.game, this.x + this.width/2, this.y + this.height/2, 'orange'));
-                }
-                 for(let i = 0; i < 10; i++) {
-                    this.game.particles.push(new Particle(this.game, this.x + this.width/2, this.y + this.height/2, '#333'));
-                }
+                for(let i = 0; i < 25; i++) { this.game.particles.push(new Particle(this.game, this.x + this.width/2, this.y + this.height/2, 'orange')); }
+                for(let i = 0; i < 10; i++) { this.game.particles.push(new Particle(this.game, this.x + this.width/2, this.y + this.height/2, '#333')); }
             }
             
             addNitro(amount) {
@@ -420,30 +544,23 @@
                 super(game);
                 this.x = Math.random() * (this.game.roadWidth - this.width) + this.game.roadMinX;
                 this.y = -this.height;
-                this.color = '#dc2626'; // Red
+                this.color = '#dc2626';
                 this.speedY = Math.random() * 2 + 1;
                 this.speedX = Math.random() > 0.5 ? 1 : -1;
             }
 
             update(deltaTime) {
-                 if(this.isWrecked) {
+                if(this.isWrecked) {
                     this.wreckTimer++;
-                    if(this.wreckTimer > 60) {
-                        this.markedForDeletion = true;
-                    }
+                    if(this.wreckTimer > 60) this.markedForDeletion = true;
                     return;
                 }
                 
                 this.y += this.speedY + this.game.speed / 2;
                 this.x += this.speedX;
 
-                if (this.x < this.game.roadMinX || this.x > this.game.roadMaxX - this.width) {
-                    this.speedX *= -1;
-                }
-
-                if (this.y > this.game.height) {
-                    this.markedForDeletion = true;
-                }
+                if (this.x < this.game.roadMinX || this.x > this.game.roadMaxX - this.width) this.speedX *= -1;
+                if (this.y > this.game.height) this.markedForDeletion = true;
             }
             
             draw(context) {
@@ -470,9 +587,7 @@
             }
             update() {
                 this.y += this.speedY;
-                if (this.y > this.game.height) {
-                    this.markedForDeletion = true;
-                }
+                if (this.y > this.game.height) this.markedForDeletion = true;
             }
             draw(context) {
                 context.fillStyle = '#d1d5db';
@@ -485,13 +600,13 @@
                 this.game = game;
                 this.x = x;
                 this.y = y;
-                this.size = Math.random() * 5 + 2; // smaller particles
+                this.size = Math.random() * 5 + 2;
                 this.speedX = Math.random() * 6 - 3;
-                this.speedY = Math.random() * -12 + 2; // less vertical speed
+                this.speedY = Math.random() * -12 + 2;
                 this.gravity = 0.4;
                 this.markedForDeletion = false;
                 this.color = color;
-                this.life = 90; // shorter life
+                this.life = 90;
                 this.timer = 0;
             }
             update() {
@@ -511,6 +626,7 @@
 
         let lastTime = 0;
         function animate(timestamp) {
+            if (game.paused) return; // Stop loop if paused
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -528,12 +644,28 @@
 
         startButton.addEventListener('click', () => {
             startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
             game.init();
         });
         
         restartButton.addEventListener('click', () => {
+            // This now directly restarts the game.
             gameOverScreen.classList.add('hidden');
             game.init();
+        });
+
+        pauseButton.addEventListener('click', () => {
+            game.togglePause();
+        });
+
+        resumeButton.addEventListener('click', () => {
+            game.togglePause();
+        });
+
+        allMuteButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                audioManager.toggleMute();
+            });
         });
         
         window.addEventListener('load', () => {
