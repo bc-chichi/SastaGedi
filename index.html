@@ -3,115 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Asphalt Outlaws - Prototype v0.7</title>
+    <title>Asphalt Outlaws - Prototype v1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700&family=Teko:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Tone.js for Web Audio -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
-        body {
-            background-color: #1a1a1a;
-            color: #f0f0f0;
-            font-family: 'Teko', sans-serif;
-            overflow: hidden;
-            touch-action: none;
-        }
-        canvas {
-            background-color: #333;
-            cursor: none;
-            display: block;
-        }
-        .hud {
-            font-family: 'Chakra Petch', sans-serif;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        }
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            flex-direction: column;
-            z-index: 10;
-        }
-        .attack-zone {
-            position: absolute;
-            bottom: 0;
-            width: 50%;
-            height: 60%;
-            z-index: 5;
-            -webkit-tap-highlight-color: rgba(0,0,0,0.2);
-        }
+        body { background-color: #1a1a1a; color: #f0f0f0; font-family: 'Teko', sans-serif; overflow: hidden; touch-action: none; }
+        canvas { background-color: #333; cursor: none; display: block; }
+        .hud { font-family: 'Chakra Petch', sans-serif; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; text-align: center; flex-direction: column; z-index: 10; }
+        .attack-zone { position: absolute; bottom: 0; width: 50%; height: 60%; z-index: 5; -webkit-tap-highlight-color: rgba(0,0,0,0.2); }
         .left { left: 0; }
         .right { right: 0; }
-        .shimmer {
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            background-size: 200% 100%;
-            animation: shimmer 2s infinite;
-        }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-        .icon-button {
-            position: absolute;
-            z-index: 11;
-            background: rgba(0,0,0,0.5);
-            border: 2px solid #fff;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-        .icon-button:hover {
-            background: rgba(255,255,255,0.2);
-        }
-        .icon-button svg {
-            width: 24px;
-            height: 24px;
-            fill: #fff;
-        }
-        .menu-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-2xl;
-            color: #9ca3af; /* gray-400 */
-            transition: all 0.2s;
-        }
-        .menu-button:hover {
-            color: #fff;
-            background-color: rgba(107, 114, 128, 0.5); /* gray-500 with opacity */
-        }
-        .menu-button svg {
-            width: 1.5rem; /* w-6 */
-            height: 1.5rem; /* h-6 */
-            margin-right: 0.75rem; /* mr-3 */
-            fill: currentColor;
-        }
+        .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .icon-button { position: absolute; z-index: 11; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 50%; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .icon-button:hover { background: rgba(255,255,255,0.2); }
+        .icon-button svg { width: 24px; height: 24px; fill: #fff; }
+        .menu-button { display: flex; align-items: center; justify-content: center; text-2xl; color: #9ca3af; transition: all 0.2s; }
+        .menu-button:hover { color: #fff; background-color: rgba(107, 114, 128, 0.5); }
+        .menu-button svg { width: 1.5rem; height: 1.5rem; margin-right: 0.75rem; fill: currentColor; }
+        .garage-item { background: rgba(0,0,0,0.3); border: 2px solid #4b5563; }
+        .upgrade-button:disabled { background-color: #4b5563; cursor: not-allowed; opacity: 0.5; }
     </style>
 </head>
 <body class="flex justify-center items-center h-screen">
 
-    <div id="game-container" class="relative w-full h-full sm:w-[420px] sm:h-[900px] sm:max-w-lg sm:max-h-screen shadow-2xl overflow-hidden">
+    <div id="game-container" class="relative w-full h-full sm:w-[420px] sm:h-[900px] sm:max-w-lg sm:max-h-screen shadow-2xl overflow-hidden bg-gray-900">
         <canvas id="gameCanvas"></canvas>
 
         <!-- HUD -->
-        <div id="hud-container" class="absolute top-0 left-0 w-full p-4 text-white hud">
+        <div id="hud-container" class="absolute top-0 left-0 w-full p-4 text-white hud hidden">
             <div class="flex justify-between items-start">
                 <div>
-                    <h2 class="text-3xl tracking-widest">SCORE</h2>
-                    <p id="score" class="text-5xl font-bold">0</p>
+                    <h2 class="text-3xl tracking-widest">CASH</h2>
+                    <p id="cash-display" class="text-5xl font-bold">0</p>
                 </div>
                 <div class="flex flex-col items-end">
                     <h2 class="text-3xl tracking-widest text-right">NITRO</h2>
@@ -122,41 +50,47 @@
             </div>
         </div>
         
-        <!-- Pause Button -->
-        <button id="pause-button" class="icon-button top-4 right-4 hidden">
-            <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-        </button>
-
-        <!-- Touch Controls -->
+        <button id="pause-button" class="icon-button top-4 right-4 hidden"><svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
         <div id="attack-zone-left" class="attack-zone left"></div>
         <div id="attack-zone-right" class="attack-zone right"></div>
 
         <!-- Overlays -->
-        <div id="start-screen" class="overlay">
-            <div class="p-8 flex flex-col items-center">
-                <h1 class="text-8xl font-bold text-red-500 tracking-wider">ASPHALT OUTLAWS</h1>
-                <p class="text-4xl mt-2 text-gray-300">PROTOTYPE v0.7</p>
-                <button id="start-button" class="mt-12 px-10 py-4 text-4xl bg-red-600 hover:bg-red-700 rounded-lg font-bold tracking-widest shimmer">
-                    START RACE
-                </button>
-                <button id="mute-button-start" class="mt-8 menu-button py-2 px-6 rounded-lg">
+        <div id="garage-screen" class="overlay flex">
+            <div class="p-4 sm:p-8 flex flex-col items-center w-full h-full bg-gray-800/90">
+                <h1 class="text-7xl sm:text-8xl font-bold text-red-500 tracking-wider">GARAGE</h1>
+                <p class="text-3xl text-yellow-400 hud">Total Cash: <span id="total-cash-display">0</span></p>
+                
+                <div class="mt-8 w-full max-w-sm">
+                    <div class="garage-item p-4 rounded-lg">
+                        <h3 class="text-4xl text-cyan-400 hud">Nitro Tank</h3>
+                        <p class="text-2xl mt-1">Upgrade to fill nitro faster.</p>
+                        <p class="text-2xl hud">Level: <span id="nitro-level-display">1</span></p>
+                        <button id="upgrade-nitro-button" class="upgrade-button w-full mt-4 px-6 py-3 text-3xl bg-cyan-600 hover:bg-cyan-700 rounded-lg font-bold tracking-widest shimmer">
+                            Upgrade (<span id="nitro-cost-display">10000</span> Cash)
+                        </button>
+                    </div>
+                </div>
+                
+                <button id="mute-button-garage" class="mt-8 menu-button py-2 px-6 rounded-lg">
                     <svg class="icon-unmuted" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     <svg class="icon-muted hidden" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
                     <span class="mute-text">Music: ON</span>
                 </button>
-                <p class="mt-8 text-2xl text-gray-400">Move: Mouse/Finger<br>Attack: Tap/Click Left or Right Side</p>
+
+                <button id="start-race-button" class="mt-auto mb-8 px-10 py-4 text-5xl bg-red-600 hover:bg-red-700 rounded-lg font-bold tracking-widest shimmer">
+                    RACE
+                </button>
             </div>
         </div>
         
         <div id="game-over-screen" class="overlay hidden">
             <div class="p-8 flex flex-col items-center">
                 <h1 class="text-8xl font-bold text-red-500 tracking-wider">WRECKED</h1>
-                <p class="text-4xl mt-4 text-gray-300">FINAL SCORE</p>
-                <p id="final-score" class="text-9xl font-bold mt-2">0</p>
-                <button id="restart-button" class="mt-12 px-10 py-4 text-4xl bg-red-600 hover:bg-red-700 rounded-lg font-bold tracking-widest shimmer">
-                    RACE AGAIN
+                <p class="text-4xl mt-4 text-gray-300">CASH EARNED</p>
+                <p id="final-cash" class="text-9xl font-bold mt-2">0</p>
+                <button id="return-to-garage-button" class="mt-12 px-10 py-4 text-4xl bg-red-600 hover:bg-red-700 rounded-lg font-bold tracking-widest shimmer">
+                    RETURN TO GARAGE
                 </button>
-                <!-- Mute Button Added to Game Over Screen -->
                  <button id="mute-button-over" class="mt-8 menu-button py-2 px-6 rounded-lg">
                     <svg class="icon-unmuted" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     <svg class="icon-muted hidden" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
@@ -166,7 +100,7 @@
         </div>
 
         <div id="pause-screen" class="overlay hidden">
-            <div class="p-8">
+             <div class="p-8 flex flex-col items-center">
                 <h1 class="text-8xl font-bold text-gray-300 tracking-wider">PAUSED</h1>
                 <button id="resume-button" class="mt-12 px-10 py-4 text-4xl bg-cyan-600 hover:bg-cyan-700 rounded-lg font-bold tracking-widest shimmer">
                     RESUME
@@ -179,27 +113,34 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        const scoreEl = document.getElementById('score');
-        const finalScoreEl = document.getElementById('final-score');
+        const hudContainer = document.getElementById('hud-container');
+        const cashDisplay = document.getElementById('cash-display');
+        const finalCashEl = document.getElementById('final-cash');
         const nitroBarEl = document.getElementById('nitro-bar');
         
-        const startScreen = document.getElementById('start-screen');
+        const garageScreen = document.getElementById('garage-screen');
         const gameOverScreen = document.getElementById('game-over-screen');
         const pauseScreen = document.getElementById('pause-screen');
         
-        const startButton = document.getElementById('start-button');
-        const restartButton = document.getElementById('restart-button');
+        const startRaceButton = document.getElementById('start-race-button');
+        const returnToGarageButton = document.getElementById('return-to-garage-button');
         const resumeButton = document.getElementById('resume-button');
         const pauseButton = document.getElementById('pause-button');
         
-        const muteButtonStart = document.getElementById('mute-button-start');
+        const totalCashDisplay = document.getElementById('total-cash-display');
+        const nitroLevelDisplay = document.getElementById('nitro-level-display');
+        const upgradeNitroButton = document.getElementById('upgrade-nitro-button');
+        const nitroCostDisplay = document.getElementById('nitro-cost-display');
+
+        const muteButtonGarage = document.getElementById('mute-button-garage');
         const muteButtonOver = document.getElementById('mute-button-over');
-        const allMuteButtons = [muteButtonStart, muteButtonOver];
-        
+        const allMuteButtons = [muteButtonGarage, muteButtonOver];
+
         const attackZoneLeft = document.getElementById('attack-zone-left');
         const attackZoneRight = document.getElementById('attack-zone-right');
 
         let game;
+        let playerData = {};
 
         // --- AUDIO MANAGER ---
         class AudioManager {
@@ -221,7 +162,7 @@
             startMusic() {
                 if (this.isMuted) return;
                 if (Tone.context.state !== 'running') {
-                    Tone.context.resume();
+                    Tone.context.resume().catch(e => console.error("Audio context failed to resume", e));
                 }
                 if (!this.musicPlaying) {
                     Tone.Transport.start();
@@ -241,13 +182,15 @@
             }
 
             resumeMusic() {
-                if (this.musicPlaying) Tone.Transport.start();
+                if (this.musicPlaying && !this.isMuted) Tone.Transport.start();
             }
 
             toggleMute() {
                 this.isMuted = !this.isMuted;
                 if (this.isMuted) {
                     this.stopMusic();
+                } else if(game && game.gameStarted && !game.paused && !game.gameOver) {
+                    this.startMusic();
                 }
                 // Sync all mute buttons
                 allMuteButtons.forEach(btn => {
@@ -259,6 +202,42 @@
         }
         const audioManager = new AudioManager();
 
+        // --- PLAYER DATA & PROGRESSION ---
+        function getNitroUpgradeCost() {
+            return 10000 * Math.pow(2, playerData.nitroLevel - 1);
+        }
+
+        function updateGarageUI() {
+            totalCashDisplay.textContent = playerData.totalCash;
+            nitroLevelDisplay.textContent = playerData.nitroLevel;
+            const cost = getNitroUpgradeCost();
+            nitroCostDisplay.textContent = cost;
+            upgradeNitroButton.disabled = playerData.totalCash < cost;
+        }
+
+        function savePlayerData() {
+            try {
+                localStorage.setItem('asphaltOutlawsData', JSON.stringify(playerData));
+            } catch (e) {
+                console.error("Could not save player data to localStorage.", e);
+            }
+        }
+
+        function loadPlayerData() {
+            try {
+                const savedData = localStorage.getItem('asphaltOutlawsData');
+                if (savedData) {
+                    playerData = JSON.parse(savedData);
+                } else {
+                    playerData = { totalCash: 0, nitroLevel: 1 };
+                }
+            } catch (e) {
+                console.error("Could not load player data from localStorage.", e);
+                playerData = { totalCash: 0, nitroLevel: 1 };
+            }
+            updateGarageUI();
+        }
+
         class Game {
             constructor(width, height) {
                 this.width = width;
@@ -268,18 +247,24 @@
                 this.roadMaxX = this.roadMinX + this.roadWidth;
                 this.speed = 5;
                 this.maxSpeed = 15;
-                this.score = 0;
+                this.cashEarned = 0;
                 this.gameOver = false;
                 this.paused = false;
-                this.gameObjects = [];
                 this.gameStarted = false;
 
-                this.player = new Player(this);
-                this.gameObjects.push(this.player);
-
+                this.backgroundLayers = [
+                    new ParallaxLayer(this, 0.1, '#2d3748', 200, 50),
+                    new ParallaxLayer(this, 0.3, '#4a5568', 100, 30),
+                    new ParallaxLayer(this, 0.5, '#1a202c', 50, 15)
+                ];
+                this.scenery = [];
+                this.sceneryTimer = 0;
+                
+                this.player = new Player(this, playerData.nitroLevel);
                 this.roadMarkings = [];
                 this.opponents = [];
                 this.particles = [];
+                this.gameObjects = [];
                 
                 this.opponentTimer = 0;
                 this.opponentInterval = 200;
@@ -290,16 +275,18 @@
             init() {
                 canvas.width = this.width;
                 canvas.height = this.height;
-                this.score = 0;
+                this.cashEarned = 0;
                 this.gameOver = false;
                 this.paused = false;
-                this.gameObjects = [];
+                this.gameStarted = true;
+                
+                this.player = new Player(this, playerData.nitroLevel);
                 this.roadMarkings = [];
                 this.opponents = [];
                 this.particles = [];
-                this.player = new Player(this);
-                this.gameObjects = [this.player];
-                this.gameStarted = true;
+                this.scenery = [];
+                
+                hudContainer.classList.remove('hidden');
                 pauseButton.classList.remove('hidden');
                 audioManager.startMusic();
                 animate(0);
@@ -309,11 +296,19 @@
                 if (this.gameOver || !this.gameStarted || this.paused) return;
                 
                 if (this.speed < this.maxSpeed) this.speed += 0.005;
-                this.score += Math.floor(this.speed);
+                this.cashEarned += Math.floor(this.speed * 0.1);
 
-                this.roadMarkings.forEach(m => m.update());
-                this.roadMarkings = this.roadMarkings.filter(m => !m.markedForDeletion);
-                if (this.roadMarkings.length < 20) this.roadMarkings.push(new RoadMarking(this));
+                this.backgroundLayers.forEach(layer => layer.update());
+                
+                this.sceneryTimer += deltaTime;
+                if(this.sceneryTimer > 500) {
+                    this.scenery.push(new Scenery(this));
+                    this.sceneryTimer = 0;
+                }
+                
+                if (this.roadMarkings.length < 20) {
+                    this.roadMarkings.push(new RoadMarking(this));
+                }
                 
                 this.opponentTimer += deltaTime;
                 if (this.opponentTimer > this.opponentInterval) {
@@ -322,41 +317,46 @@
                     this.opponentInterval = Math.random() * 3000 + 800 / this.speed;
                 }
 
-                this.gameObjects = [...this.roadMarkings, ...this.opponents, ...this.particles, this.player];
-                this.gameObjects.sort((a, b) => a.y - b.y);
-
+                this.gameObjects = [this.player, ...this.roadMarkings, ...this.scenery, ...this.opponents, ...this.particles];
                 this.gameObjects.forEach(obj => obj.update(deltaTime));
-                this.gameObjects = this.gameObjects.filter(obj => !obj.markedForDeletion);
-                this.opponents = this.opponents.filter(obj => !obj.markedForDeletion);
-                this.particles = this.particles.filter(obj => !obj.markedForDeletion);
+
+                this.roadMarkings = this.roadMarkings.filter(m => !m.markedForDeletion);
+                this.scenery = this.scenery.filter(s => !s.markedForDeletion);
+                this.opponents = this.opponents.filter(o => !o.markedForDeletion);
+                this.particles = this.particles.filter(p => !p.markedForDeletion);
             }
 
             draw(context) {
-                context.fillStyle = '#333';
+                context.fillStyle = '#1a202c';
                 context.fillRect(0, 0, this.width, this.height);
+                
+                this.backgroundLayers.forEach(layer => layer.draw(context));
+
+                context.fillStyle = '#333';
+                context.fillRect(this.roadMinX, 0, this.roadWidth, this.height);
                 
                 context.fillStyle = '#222';
                 context.fillRect(0, 0, this.roadMinX, this.height);
                 context.fillRect(this.roadMaxX, 0, this.width - this.roadMaxX, this.height);
                 
-                context.fillStyle = '#f0f0f0';
-                for(let i = 0; i < this.height; i+= 20) {
-                    if(Math.floor(i + this.score) % 40 > 20) {
-                        context.fillRect(this.roadMinX - 5, i, 5, 10);
-                        context.fillRect(this.roadMaxX, i, 5, 10);
-                    }
-                }
-
-                this.gameObjects.forEach(obj => obj.draw(context));
+                const drawableObjects = [...this.scenery, ...this.roadMarkings, ...this.opponents, ...this.particles, this.player];
+                drawableObjects.sort((a, b) => a.y - b.y);
+                drawableObjects.forEach(obj => obj.draw(context));
                 
-                scoreEl.textContent = this.score;
+                cashDisplay.textContent = this.cashEarned;
                 nitroBarEl.style.width = `${this.player.nitro}%`;
             }
             
             endGame() {
                 this.gameOver = true;
+                hudContainer.classList.add('hidden');
                 pauseButton.classList.add('hidden');
-                finalScoreEl.textContent = this.score;
+                
+                playerData.totalCash += this.cashEarned;
+                savePlayerData();
+                updateGarageUI();
+
+                finalCashEl.textContent = this.cashEarned;
                 gameOverScreen.classList.remove('hidden');
                 audioManager.stopMusic();
             }
@@ -368,45 +368,42 @@
                     audioManager.pauseMusic();
                 } else {
                     audioManager.resumeMusic();
-                    animate(lastTime); // Resume animation loop
+                    animate(lastTime);
+                }
+            }
+        }
+        
+        class ParallaxLayer {
+            constructor(game, speedModifier, color, height, spacing) {
+                this.game = game; this.speedModifier = speedModifier; this.color = color; this.height = height; this.spacing = spacing; this.y = 0;
+            }
+            update() { this.y = (this.y + this.game.speed * this.speedModifier) % (this.height + this.spacing); }
+            draw(context) {
+                context.fillStyle = this.color;
+                for (let i = -1; i < (this.game.height / (this.height + this.spacing)) + 1; i++) {
+                    const yPos = this.y + i * (this.height + this.spacing);
+                    context.fillRect(0, yPos, this.game.width, this.height);
                 }
             }
         }
 
+        class Scenery {
+            constructor(game) {
+                this.game = game; this.width = Math.random() * 20 + 10; this.height = Math.random() * 100 + 50; this.side = Math.random() > 0.5 ? 'left' : 'right';
+                this.x = this.side === 'left' ? Math.random() * (this.game.roadMinX - this.width - 10) + 5 : this.game.roadMaxX + Math.random() * (this.game.roadMinX - this.width - 10) + 5;
+                this.y = -this.height; this.color = '#2d3748'; this.markedForDeletion = false;
+            }
+            update() { this.y += this.game.speed; if (this.y > this.game.height) this.markedForDeletion = true; }
+            draw(context) { context.fillStyle = this.color; context.fillRect(this.x, this.y, this.width, this.height); }
+        }
+
         class InputHandler {
             constructor(game) {
-                this.game = game;
-                this.mouseX = this.game.width / 2;
-
-                window.addEventListener('mousemove', e => {
-                    if (this.game.paused) return;
-                    const rect = canvas.getBoundingClientRect();
-                    this.mouseX = e.clientX - rect.left;
-                });
-                window.addEventListener('touchmove', e => {
-                    if (this.game.paused) return;
-                    const rect = canvas.getBoundingClientRect();
-                    if (e.touches.length > 0) {
-                        this.mouseX = e.touches[0].clientX - rect.left;
-                    }
-                }, { passive: false });
-
-                const pcAttackHandler = (e) => {
-                    if (this.game.gameStarted && !this.game.gameOver && !this.game.paused) {
-                       const rect = canvas.getBoundingClientRect();
-                       const clickX = e.clientX - rect.left;
-                       const side = clickX < this.game.width / 2 ? 'left' : 'right';
-                       this.game.player.attack(side);
-                    }
-                    e.preventDefault();
-                };
-                
-                const mobileAttackHandler = (side) => {
-                    if (this.game.gameStarted && !this.game.gameOver && !this.game.paused) {
-                       this.game.player.attack(side);
-                    }
-                };
-                
+                this.game = game; this.mouseX = this.game.width / 2;
+                window.addEventListener('mousemove', e => { if (this.game.paused) return; const rect = canvas.getBoundingClientRect(); this.mouseX = e.clientX - rect.left; });
+                window.addEventListener('touchmove', e => { if (this.game.paused) return; const rect = canvas.getBoundingClientRect(); if (e.touches.length > 0) { this.mouseX = e.touches[0].clientX - rect.left; } }, { passive: false });
+                const pcAttackHandler = (e) => { if (this.game.gameStarted && !this.game.gameOver && !this.game.paused) { const rect = canvas.getBoundingClientRect(); const clickX = e.clientX - rect.left; const side = clickX < this.game.width / 2 ? 'left' : 'right'; this.game.player.attack(side); } e.preventDefault(); };
+                const mobileAttackHandler = (side) => { if (this.game.gameStarted && !this.game.gameOver && !this.game.paused) { this.game.player.attack(side); }};
                 canvas.addEventListener('mousedown', pcAttackHandler);
                 attackZoneLeft.addEventListener('touchstart', (e) => { e.preventDefault(); mobileAttackHandler('left'); });
                 attackZoneRight.addEventListener('touchstart', (e) => { e.preventDefault(); mobileAttackHandler('right'); });
@@ -414,236 +411,102 @@
         }
 
         class Player {
-            constructor(game) {
-                this.game = game;
-                this.width = 30;
-                this.height = 60;
-                this.x = this.game.width / 2 - this.width / 2;
-                this.y = this.game.height * 0.8;
-                this.color = '#3b82f6';
-                
-                this.isAttacking = false;
-                this.attackFrame = 0;
-                this.attackDuration = 15;
-                this.attackSide = 'right';
-                this.pipeLength = 50;
-                this.pipeWidth = 8;
-
-                this.nitro = 0;
-                this.maxNitro = 100;
-                this.isWrecked = false;
-                this.wreckTimer = 0;
+            constructor(game, nitroLevel) {
+                this.game = game; this.width = 30; this.height = 60;
+                this.x = this.game.width / 2 - this.width / 2; this.y = this.game.height * 0.8;
+                this.color = '#3b82f6'; this.lean = 0; this.isAttacking = false; this.attackFrame = 0;
+                this.attackSide = 'right'; this.weaponLength = 70; this.attackDuration = 20;
+                this.nitro = 0; this.maxNitro = 100; this.nitroLevel = nitroLevel;
+                this.nitroBonus = 1 + (this.nitroLevel - 1) * 0.1;
+                this.isWrecked = false; this.wreckTimer = 0;
             }
 
             update(deltaTime) {
-                if(this.isWrecked) {
-                    this.wreckTimer++;
-                    if(this.wreckTimer > 120) this.game.endGame();
-                    return;
-                }
-
-                const dx = this.game.input.mouseX - (this.x + this.width / 2);
+                if(this.isWrecked) { this.wreckTimer++; if(this.wreckTimer > 120) this.game.endGame(); return; }
+                const targetX = this.game.input.mouseX - this.width / 2;
+                const dx = targetX - this.x;
+                this.lean = dx * 0.02;
                 this.x += dx * 0.1;
                 this.x = Math.max(this.game.roadMinX, Math.min(this.x, this.game.roadMaxX - this.width));
-
-                if (this.isAttacking) {
-                    this.attackFrame++;
-                    if (this.attackFrame > this.attackDuration) {
-                        this.isAttacking = false;
-                        this.attackFrame = 0;
-                    } else {
-                        this.checkAttackHit();
-                    }
-                }
-                
-                this.game.opponents.forEach(opponent => {
-                    if (this.isColliding(opponent)) this.wreck();
-                });
+                if (this.isAttacking) { this.attackFrame++; if (this.attackFrame > this.attackDuration) { this.isAttacking = false; this.attackFrame = 0; } else { this.checkAttackHit(); } }
+                this.game.opponents.forEach(opponent => { if (!opponent.isWrecked && this.isColliding(opponent)) this.wreck(); });
             }
 
             draw(context) {
                 if(this.isWrecked) {
-                    context.fillStyle = 'orange';
-                    context.beginPath();
-                    context.arc(this.x + this.width / 2, this.y + this.height / 2, this.wreckTimer * 1.5, 0, Math.PI * 2);
-                    context.fill();
-                    context.fillStyle = 'red';
-                    context.beginPath();
-                    context.arc(this.x + this.width / 2, this.y + this.height / 2, this.wreckTimer * 0.75, 0, Math.PI * 2);
-                    context.fill();
+                    context.fillStyle = 'orange'; context.beginPath(); context.arc(this.x + this.width / 2, this.y + this.height / 2, this.wreckTimer * 1.5, 0, Math.PI * 2); context.fill();
                     return;
                 }
-                
-                context.fillStyle = this.color;
-                context.fillRect(this.x, this.y, this.width, this.height);
-                context.fillStyle = 'yellow';
-                context.fillRect(this.x + this.width/2 - 2, this.y, 4, 6);
-
+                context.save();
+                context.translate(this.x + this.width/2, this.y + this.height/2);
+                context.rotate(this.lean * 0.1);
+                context.translate(-(this.x + this.width/2), -(this.y + this.height/2));
+                context.fillStyle = this.color; context.fillRect(this.x, this.y, this.width, this.height);
+                context.fillStyle = 'yellow'; context.fillRect(this.x + this.width/2 - 2, this.y, 4, 6);
+                context.restore();
                 if (this.isAttacking) {
                     const attackProgress = this.attackFrame / this.attackDuration;
                     const angleMultiplier = this.attackSide === 'left' ? -1 : 1;
                     const angle = Math.sin(attackProgress * Math.PI) * 1.2 * angleMultiplier;
-                    
                     context.save();
                     context.translate(this.x + this.width / 2, this.y + 20);
                     context.rotate(angle);
-                    context.fillStyle = '#9ca3af';
-                    context.fillRect(this.width / 2 - this.pipeWidth/2, -this.pipeWidth/2, this.pipeLength, this.pipeWidth);
+                    context.strokeStyle = '#9ca3af'; context.lineWidth = 4; context.beginPath(); context.moveTo(0, 0); context.lineTo(this.weaponLength, 0); context.stroke();
+                    context.beginPath(); context.arc(this.weaponLength, 0, 6, 0, Math.PI * 2); context.fillStyle = '#6b7280'; context.fill();
                     context.restore();
                 }
             }
             
-            attack(side) {
-                if (!this.isAttacking && !this.isWrecked) {
-                    this.isAttacking = true;
-                    this.attackFrame = 0;
-                    this.attackSide = side;
-                }
-            }
-            
+            attack(side) { if (!this.isAttacking && !this.isWrecked) { this.isAttacking = true; this.attackFrame = 0; this.attackSide = side; }}
             checkAttackHit() {
-                this.game.opponents.forEach(opponent => {
+                 this.game.opponents.forEach(opponent => {
                     if (!opponent.isWrecked) {
-                        // Define a rectangular hitbox for the swing area
-                        let hitBoxX, hitBoxY, hitBoxWidth, hitBoxHeight;
-                        
-                        // The vertical position of the hitbox is roughly aligned with the player
-                        hitBoxY = this.y;
-                        hitBoxHeight = this.height;
-                        hitBoxWidth = this.pipeLength;
-
-                        // Position the hitbox to the left or right of the player
-                        if (this.attackSide === 'right') {
-                            hitBoxX = this.x + this.width;
-                        } else { // 'left'
-                            hitBoxX = this.x - hitBoxWidth;
-                        }
-
-                        // Simple Axis-Aligned Bounding Box (AABB) collision check
-                        if (opponent.x < hitBoxX + hitBoxWidth &&
-                            opponent.x + opponent.width > hitBoxX &&
-                            opponent.y < hitBoxY + hitBoxHeight &&
-                            opponent.y + opponent.height > hitBoxY) {
-                                opponent.wreck();
-                                this.game.score += 500;
-                                this.addNitro(25);
+                        let hitBoxX, hitBoxY = this.y, hitBoxHeight = this.height, hitBoxWidth = this.weaponLength;
+                        if (this.attackSide === 'right') { hitBoxX = this.x + this.width; } else { hitBoxX = this.x - hitBoxWidth; }
+                        if (opponent.x < hitBoxX + hitBoxWidth && opponent.x + opponent.width > hitBoxX && opponent.y < hitBoxY + hitBoxHeight && opponent.y + opponent.height > hitBoxY) {
+                            opponent.wreck(); this.game.cashEarned += 100; this.addNitro(25);
                         }
                     }
                 });
             }
-            
-            isColliding(other) {
-                return (this.x < other.x + other.width && this.x + this.width > other.x && this.y < other.y + other.height && this.y + this.height > other.y);
-            }
-            
-            wreck() {
-                if(this.isWrecked) return;
-                this.isWrecked = true;
-                for(let i = 0; i < 25; i++) { this.game.particles.push(new Particle(this.game, this.x + this.width/2, this.y + this.height/2, 'orange')); }
-                for(let i = 0; i < 10; i++) { this.game.particles.push(new Particle(this.game, this.x + this.width/2, this.y + this.height/2, '#333')); }
-            }
-            
-            addNitro(amount) {
-                this.nitro = Math.min(this.maxNitro, this.nitro + amount);
-            }
+            isColliding(other) { return (this.x < other.x + other.width && this.x + this.width > other.x && this.y < other.y + other.height && this.y + this.height > other.y); }
+            wreck() { if(this.isWrecked) return; this.isWrecked = true; for(let i = 0; i < 25; i++) { this.game.particles.push(new Particle(this.game, this.x + this.width/2, this.y + this.height/2, 'orange')); }}
+            addNitro(amount) { this.nitro = Math.min(this.maxNitro, this.nitro + (amount * this.nitroBonus)); }
         }
 
         class Opponent extends Player {
-            constructor(game) {
-                super(game);
-                this.x = Math.random() * (this.game.roadWidth - this.width) + this.game.roadMinX;
-                this.y = -this.height;
-                this.color = '#dc2626';
-                this.speedY = Math.random() * 2 + 1;
-                this.speedX = Math.random() > 0.5 ? 1 : -1;
-            }
-
+            constructor(game) { super(game, 1); this.x = Math.random() * (this.game.roadWidth - this.width) + this.game.roadMinX; this.y = -this.height; this.color = '#dc2626'; this.speedY = Math.random() * 2 + 1; this.speedX = Math.random() > 0.5 ? 1 : -1; }
             update(deltaTime) {
-                if(this.isWrecked) {
-                    this.wreckTimer++;
-                    if(this.wreckTimer > 60) this.markedForDeletion = true;
-                    return;
-                }
-                
+                if(this.isWrecked) { this.wreckTimer++; if(this.wreckTimer > 60) this.markedForDeletion = true; return; }
                 this.y += this.speedY + this.game.speed / 2;
                 this.x += this.speedX;
-
                 if (this.x < this.game.roadMinX || this.x > this.game.roadMaxX - this.width) this.speedX *= -1;
                 if (this.y > this.game.height) this.markedForDeletion = true;
-            }
-            
-            draw(context) {
-                if(this.isWrecked) {
-                     context.fillStyle = 'orange';
-                    context.beginPath();
-                    context.arc(this.x + this.width / 2, this.y + this.height / 2, this.wreckTimer, 0, Math.PI * 2);
-                    context.fill();
-                } else {
-                    super.draw(context);
-                }
+                this.lean = this.speedX * 0.1;
             }
         }
 
         class RoadMarking {
-            constructor(game) {
-                this.game = game;
-                this.width = 5;
-                this.height = 40;
-                this.x = this.game.width / 2 - this.width / 2;
-                this.y = -this.height;
-                this.speedY = this.game.speed;
-                this.markedForDeletion = false;
-            }
-            update() {
-                this.y += this.speedY;
-                if (this.y > this.game.height) this.markedForDeletion = true;
-            }
-            draw(context) {
-                context.fillStyle = '#d1d5db';
-                context.fillRect(this.x, this.y, this.width, this.height);
-            }
+            constructor(game) { this.game = game; this.width = 5; this.height = 40; this.x = this.game.width / 2 - this.width / 2; this.y = -this.height; this.speedY = this.game.speed; this.markedForDeletion = false; }
+            update() { this.y += this.game.speed; if (this.y > this.game.height) this.markedForDeletion = true; }
+            draw(context) { context.fillStyle = '#d1d5db'; context.fillRect(this.x, this.y, this.width, this.height); }
         }
         
         class Particle {
-            constructor(game, x, y, color) {
-                this.game = game;
-                this.x = x;
-                this.y = y;
-                this.size = Math.random() * 5 + 2;
-                this.speedX = Math.random() * 6 - 3;
-                this.speedY = Math.random() * -12 + 2;
-                this.gravity = 0.4;
-                this.markedForDeletion = false;
-                this.color = color;
-                this.life = 90;
-                this.timer = 0;
-            }
-            update() {
-                this.speedY += this.gravity;
-                this.x += this.speedX;
-                this.y += this.speedY;
-                this.timer++;
-                if(this.timer > this.life) this.markedForDeletion = true;
-            }
-            draw(context) {
-                context.fillStyle = this.color;
-                context.beginPath();
-                context.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                context.fill();
-            }
+            constructor(game, x, y, color) { this.game = game; this.x = x; this.y = y; this.size = Math.random() * 5 + 2; this.speedX = Math.random() * 6 - 3; this.speedY = Math.random() * -12 + 2; this.gravity = 0.4; this.markedForDeletion = false; this.color = color; this.life = 90; this.timer = 0; }
+            update() { this.speedY += this.gravity; this.x += this.speedX; this.y += this.speedY; this.timer++; if(this.timer > this.life) this.markedForDeletion = true; }
+            draw(context) { context.fillStyle = this.color; context.beginPath(); context.arc(this.x, this.y, this.size, 0, Math.PI * 2); context.fill(); }
         }
 
         let lastTime = 0;
         function animate(timestamp) {
-            if (game.paused) return; // Stop loop if paused
+            if (!game || game.paused) return;
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             game.update(deltaTime);
             game.draw(ctx);
-            if (!game.gameOver) {
-                requestAnimationFrame(animate);
-            }
+            if (!game.gameOver) requestAnimationFrame(animate);
         }
         
         function setupGame() {
@@ -651,39 +514,20 @@
             game = new Game(container.clientWidth, container.clientHeight);
         }
 
-        startButton.addEventListener('click', () => {
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            game.init();
-        });
+        startRaceButton.addEventListener('click', () => { garageScreen.classList.add('hidden'); game.init(); });
+        returnToGarageButton.addEventListener('click', () => { gameOverScreen.classList.add('hidden'); garageScreen.classList.remove('hidden'); });
+        upgradeNitroButton.addEventListener('click', () => { const cost = getNitroUpgradeCost(); if (playerData.totalCash >= cost) { playerData.totalCash -= cost; playerData.nitroLevel++; savePlayerData(); updateGarageUI(); }});
+        pauseButton.addEventListener('click', () => game.togglePause());
+        resumeButton.addEventListener('click', () => game.togglePause());
         
-        restartButton.addEventListener('click', () => {
-            // This now directly restarts the game.
-            gameOverScreen.classList.add('hidden');
-            game.init();
-        });
-
-        pauseButton.addEventListener('click', () => {
-            game.togglePause();
-        });
-
-        resumeButton.addEventListener('click', () => {
-            game.togglePause();
-        });
-
         allMuteButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 audioManager.toggleMute();
             });
         });
-        
-        window.addEventListener('load', () => {
-            setupGame();
-        });
-        
-        window.addEventListener('resize', () => {
-            window.location.reload();
-        });
+
+        window.addEventListener('load', () => { loadPlayerData(); setupGame(); });
+        window.addEventListener('resize', () => window.location.reload());
 
     </script>
 </body>
