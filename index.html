@@ -504,17 +504,26 @@
             checkAttackHit() {
                 this.game.opponents.forEach(opponent => {
                     if (!opponent.isWrecked) {
-                        const angleMultiplier = this.attackSide === 'left' ? -1 : 1;
-                        const angle = 1.2 * angleMultiplier;
+                        // Define a rectangular hitbox for the swing area
+                        let hitBoxX, hitBoxY, hitBoxWidth, hitBoxHeight;
                         
-                        const pipeOriginX = this.x + this.width / 2;
-                        const pipeOriginY = this.y + 20;
+                        // The vertical position of the hitbox is roughly aligned with the player
+                        hitBoxY = this.y;
+                        hitBoxHeight = this.height;
+                        hitBoxWidth = this.pipeLength;
 
-                        const pipeTipX = pipeOriginX + Math.cos(angle) * this.pipeLength;
-                        const pipeTipY = pipeOriginY + Math.sin(angle) * this.pipeLength;
-                        
-                        if (pipeTipX > opponent.x && pipeTipX < opponent.x + opponent.width &&
-                            pipeTipY > opponent.y && pipeTipY < opponent.y + opponent.height) {
+                        // Position the hitbox to the left or right of the player
+                        if (this.attackSide === 'right') {
+                            hitBoxX = this.x + this.width;
+                        } else { // 'left'
+                            hitBoxX = this.x - hitBoxWidth;
+                        }
+
+                        // Simple Axis-Aligned Bounding Box (AABB) collision check
+                        if (opponent.x < hitBoxX + hitBoxWidth &&
+                            opponent.x + opponent.width > hitBoxX &&
+                            opponent.y < hitBoxY + hitBoxHeight &&
+                            opponent.y + opponent.height > hitBoxY) {
                                 opponent.wreck();
                                 this.game.score += 500;
                                 this.addNitro(25);
